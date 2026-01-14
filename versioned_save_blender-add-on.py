@@ -1,10 +1,10 @@
 bl_info = {
     "name": "Versioned Save",
     "author": "Felcon8",
-    "version": (1, 3, 0),
+    "version": (1, 4, 0),
     "blender": (3, 0, 0),
-    "location": "File > Versioned Save (or Custom Hotkey)",
-    "description": "Save new versions (Number or Timestamp). Custom hotkey available in preferences.",
+    "location": "Preferences > Keymap Customization",
+    "description": "Save new versions with a custom recordable hotkey.",
     "category": "System",
     "doc_url": "https://github.com/Felcon8/VersionedSaveAdd-on",
 }
@@ -63,7 +63,7 @@ class VersionedSavePreferences(bpy.types.AddonPreferences):
     def draw(self, context):
         layout = self.layout
         
-        # GitHub Link
+        # Ссылка на GitHub
         row = layout.row()
         row.operator("wm.url_open", text="GitHub Repository", icon='INFO').url = "https://github.com/Felcon8/VersionedSaveAdd-on"
         
@@ -74,73 +74,19 @@ class VersionedSavePreferences(bpy.types.AddonPreferences):
         sub.enabled = self.enable_versioned_save
         sub.prop(self, "save_type", expand=True)
 
-        # Секция настройки горячих клавиш
+        # СЕКЦИЯ ГОРЯЧИХ КЛАВИШ (Та самая строчка)
         layout.separator()
-        layout.label(text="Hotkey Configuration:")
+        layout.label(text="Click below to record your Hotkey:")
+        
         wm = context.window_manager
         kc = wm.keyconfigs.user
         km = kc.keymaps.get('Window')
+        
         if km:
+            # Ищем наш оператор в списке клавиш
+            found = False
             for kmi in km.keymap_items:
                 if kmi.idname == "wm.ctrl_s_versioned_save":
-                    layout.context_pointer_set("keymap", km)
-                    layout.column().prop(kmi, "type", text="Key")
-                    row = layout.row(align=True)
-                    row.prop(kmi, "ctrl", text="Ctrl")
-                    row.prop(kmi, "shift", text="Shift")
-                    row.prop(kmi, "alt", text="Alt")
-
-# ------------------------
-# Operator
-# ------------------------
-
-class WM_OT_ctrl_s_versioned_save(bpy.types.Operator):
-    bl_idname = "wm.ctrl_s_versioned_save"
-    bl_label = "Versioned Save"
-
-    def execute(self, context):
-        prefs = context.preferences.addons[__name__].preferences
-
-        if not prefs.enable_versioned_save:
-            bpy.ops.wm.save_mainfile()
-            return {'FINISHED'}
-
-        if not bpy.data.filepath:
-            self.report({'WARNING'}, "Save file once before versioning")
-            return {'CANCELLED'}
-
-        new_path = get_next_version(bpy.data.filepath, prefs.save_type)
-        bpy.ops.wm.save_as_mainfile(filepath=new_path, copy=False)
-        self.report({'INFO'}, f"Saved: {os.path.basename(new_path)}")
-        return {'FINISHED'}
-
-# ------------------------
-# Registration
-# ------------------------
-
-addon_keymaps = []
-
-def register():
-    bpy.utils.register_class(VersionedSavePreferences)
-    bpy.utils.register_class(WM_OT_ctrl_s_versioned_save)
-
-    wm = bpy.context.window_manager
-    kc = wm.keyconfigs.addon
-    if kc:
-        km = kc.keymaps.new(name='Window', space_type='EMPTY')
-        kmi = km.keymap_items.new(
-            WM_OT_ctrl_s_versioned_save.bl_idname,
-            type='S', value='PRESS', ctrl=True
-        )
-        addon_keymaps.append((km, kmi))
-
-def unregister():
-    for km, kmi in addon_keymaps:
-        km.keymap_items.remove(kmi)
-    addon_keymaps.clear()
-
-    bpy.utils.unregister_class(WM_OT_ctrl_s_versioned_save)
-    bpy.utils.unregister_class(VersionedSavePreferences)
-
-if __name__ == "__main__":
-    register()
+                    # Отрисовываем строчку записи (нажал -> ввел комбо)
+                    col = layout.column(align=True)
+                    col.context_pointer_set("keymap",
