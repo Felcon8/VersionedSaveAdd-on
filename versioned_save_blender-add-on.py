@@ -1,12 +1,12 @@
 bl_info = {
     "name": "Versioned Save",
     "author": "Felcon8",
-    "version": (1, 2, 0),
+    "version": (1, 3, 0),
     "blender": (3, 0, 0),
-    "location": "Ctrl + S / Preferences",
-    "description": "Save new versions (Number or Timestamp) instead of overwrite on Ctrl+S",
+    "location": "File > Versioned Save (or Custom Hotkey)",
+    "description": "Save new versions (Number or Timestamp). Custom hotkey available in preferences.",
     "category": "System",
-    "doc_url": "https://github.com/Felcon8/VersionedSaveAdd-on", # Ваша ссылка здесь
+    "doc_url": "https://github.com/Felcon8/VersionedSaveAdd-on",
 }
 
 import bpy
@@ -24,13 +24,10 @@ def get_next_version(filepath, save_type):
     name, ext = os.path.splitext(filename)
 
     if save_type == 'TIMESTAMP':
-        # Format: YYYY-MM-DD-HH-MM
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
-        # Clean old version or timestamp suffixes
         base_name = re.sub(r"(_v\d+|_ts\d{4}-\d{2}-\d{2}-\d{2}-\d{2})$", "", name)
         return os.path.join(directory, f"{base_name}_ts{timestamp}{ext}")
-
-    else:  # NUMBER mode
+    else:
         match = re.search(r"_v(\d+)$", name)
         if match:
             base = name[:match.start()]
@@ -48,7 +45,7 @@ class VersionedSavePreferences(bpy.types.AddonPreferences):
     bl_idname = __name__
 
     enable_versioned_save: BoolProperty(
-        name="Use Versioned Save on Ctrl+S",
+        name="Use Versioned Save",
         description="Enable/Disable versioning logic",
         default=True
     )
@@ -58,7 +55,7 @@ class VersionedSavePreferences(bpy.types.AddonPreferences):
         description="Choose how to name your versions",
         items=[
             ('NUMBER', "Number", "Increment version number (e.g. _v001)"),
-            ('TIMESTAMP', "Timestamp", "Use current date and time (e.g. _ts2026-01-14-14-30)")
+            ('TIMESTAMP', "Timestamp", "Use current date and time (e.g. _ts2026-01-14)")
         ],
         default='NUMBER'
     )
@@ -66,7 +63,7 @@ class VersionedSavePreferences(bpy.types.AddonPreferences):
     def draw(self, context):
         layout = self.layout
         
-        # Ссылка на GitHub прямо в настройках
+        # GitHub Link
         row = layout.row()
         row.operator("wm.url_open", text="GitHub Repository", icon='INFO').url = "https://github.com/Felcon8/VersionedSaveAdd-on"
         
@@ -76,6 +73,22 @@ class VersionedSavePreferences(bpy.types.AddonPreferences):
         sub = layout.column()
         sub.enabled = self.enable_versioned_save
         sub.prop(self, "save_type", expand=True)
+
+        # Секция настройки горячих клавиш
+        layout.separator()
+        layout.label(text="Hotkey Configuration:")
+        wm = context.window_manager
+        kc = wm.keyconfigs.user
+        km = kc.keymaps.get('Window')
+        if km:
+            for kmi in km.keymap_items:
+                if kmi.idname == "wm.ctrl_s_versioned_save":
+                    layout.context_pointer_set("keymap", km)
+                    layout.column().prop(kmi, "type", text="Key")
+                    row = layout.row(align=True)
+                    row.prop(kmi, "ctrl", text="Ctrl")
+                    row.prop(kmi, "shift", text="Shift")
+                    row.prop(kmi, "alt", text="Alt")
 
 # ------------------------
 # Operator
@@ -98,7 +111,6 @@ class WM_OT_ctrl_s_versioned_save(bpy.types.Operator):
 
         new_path = get_next_version(bpy.data.filepath, prefs.save_type)
         bpy.ops.wm.save_as_mainfile(filepath=new_path, copy=False)
-
         self.report({'INFO'}, f"Saved: {os.path.basename(new_path)}")
         return {'FINISHED'}
 
@@ -113,12 +125,14 @@ def register():
     bpy.utils.register_class(WM_OT_ctrl_s_versioned_save)
 
     wm = bpy.context.window_manager
-    km = wm.keyconfigs.addon.keymaps.new(name='Window', space_type='EMPTY')
-    kmi = km.keymap_items.new(
-        WM_OT_ctrl_s_versioned_save.bl_idname,
-        type='S', value='PRESS', ctrl=True
-    )
-    addon_keymaps.append((km, kmi))
+    kc = wm.keyconfigs.addon
+    if kc:
+        km = kc.keymaps.new(name='Window', space_type='EMPTY')
+        kmi = km.keymap_items.new(
+            WM_OT_ctrl_s_versioned_save.bl_idname,
+            type='S', value='PRESS', ctrl=True
+        )
+        addon_keymaps.append((km, kmi))
 
 def unregister():
     for km, kmi in addon_keymaps:
