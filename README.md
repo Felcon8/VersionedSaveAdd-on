@@ -15,5 +15,10 @@ When you press **Ctrl + S**:
 3. Click **Install...** and select the downloaded script.
 4. Enable the checkbox for **Versioned Save**.
 
+## Configuration
+You can customize the naming behavior in the Add-on preferences:
+* **Type Setting**: Choose between **Number** (sequential) or **Timestamp** (date/time).
+* **Toggle**: Use the checkbox to enable or disable the versioning logic.
+
 ## Requirements
 * Blender 3.0.0 or newer.
