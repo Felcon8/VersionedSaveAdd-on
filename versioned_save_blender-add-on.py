@@ -6,6 +6,7 @@ bl_info = {
     "location": "Ctrl + S / Preferences",
     "description": "Save new versions (Number or Timestamp) instead of overwrite on Ctrl+S",
     "category": "System",
+    "doc_url": "https://github.com/Felcon8/VersionedSaveAdd-on", # Ваша ссылка здесь
 }
 
 import bpy
@@ -57,13 +58,19 @@ class VersionedSavePreferences(bpy.types.AddonPreferences):
         description="Choose how to name your versions",
         items=[
             ('NUMBER', "Number", "Increment version number (e.g. _v001)"),
-            ('TIMESTAMP', "Timestamp", "Use current date and time (e.g. _ts2024-01-14-14-30)")
+            ('TIMESTAMP', "Timestamp", "Use current date and time (e.g. _ts2026-01-14-14-30)")
         ],
         default='NUMBER'
     )
 
     def draw(self, context):
         layout = self.layout
+        
+        # Ссылка на GitHub прямо в настройках
+        row = layout.row()
+        row.operator("wm.url_open", text="GitHub Repository", icon='INFO').url = "https://github.com/Felcon8/VersionedSaveAdd-on"
+        
+        layout.separator()
         layout.prop(self, "enable_versioned_save")
         
         sub = layout.column()
