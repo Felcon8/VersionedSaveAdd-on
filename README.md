@@ -17,8 +17,8 @@ When you press **Ctrl + S**:
 
 ## Configuration
 You can customize the naming behavior in the Add-on preferences:
+* **Open Settings**: Click the **small arrow (triangle) ►** on the left side of the "Versioned Save" name in the Add-ons list to expand the preferences.
 * **Type Setting**: Choose between **Number** (sequential) or **Timestamp** (date/time).
-* **Toggle**: Use the checkbox to enable or disable the versioning logic.
 
 ## Requirements
 * Blender 3.0.0 or newer.
