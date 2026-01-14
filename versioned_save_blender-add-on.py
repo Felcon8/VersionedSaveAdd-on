@@ -63,7 +63,6 @@ class VersionedSavePreferences(bpy.types.AddonPreferences):
     def draw(self, context):
         layout = self.layout
         
-        # Ссылка на GitHub
         row = layout.row()
         row.operator("wm.url_open", text="GitHub Repository", icon='INFO').url = "https://github.com/Felcon8/VersionedSaveAdd-on"
         
@@ -74,25 +73,21 @@ class VersionedSavePreferences(bpy.types.AddonPreferences):
         sub.enabled = self.enable_versioned_save
         sub.prop(self, "save_type", expand=True)
 
-        # СЕКЦИЯ ГОРЯЧИХ КЛАВИШ (Та самая строчка)
         layout.separator()
-        layout.label(text="Click below to record your Hotkey:")
+        layout.label(text="Hotkey Configuration:")
         
         wm = context.window_manager
         kc = wm.keyconfigs.user
         km = kc.keymaps.get('Window')
         
         if km:
-            # Ищем наш оператор в списке клавиш
             found = False
             for kmi in km.keymap_items:
                 if kmi.idname == "wm.ctrl_s_versioned_save":
-                    # Отрисовываем строчку записи (нажал -> ввел комбо)
                     col = layout.column(align=True)
                     col.context_pointer_set("keymap", km)
-                    col.prop(kmi, "type", text="", full_event=True) # full_event делает строчку интерактивной
+                    col.prop(kmi, "type", text="", full_event=True)
                     
-                    # Дополнительные настройки (Ctrl, Alt, Shift) под строчкой для проверки
                     row = col.row(align=True)
                     row.prop(kmi, "ctrl", text="Ctrl", toggle=True)
                     row.prop(kmi, "shift", text="Shift", toggle=True)
@@ -101,7 +96,7 @@ class VersionedSavePreferences(bpy.types.AddonPreferences):
                     break
             
             if not found:
-                layout.label(text="Hotkey entry not found. Please reinstall the addon.", icon='ERROR')
+                layout.label(text="Hotkey entry not found.", icon='ERROR')
 
 # ------------------------
 # Operator
@@ -138,7 +133,6 @@ def register():
     bpy.utils.register_class(WM_OT_ctrl_s_versioned_save)
 
     wm = bpy.context.window_manager
-    # Регистрируем в секции 'Window', чтобы работало везде
     kc = wm.keyconfigs.addon
     if kc:
         km = kc.keymaps.new(name='Window', space_type='EMPTY')
