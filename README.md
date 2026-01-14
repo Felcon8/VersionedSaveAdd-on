@@ -13,7 +13,7 @@ When you press **Ctrl + S**:
 1. Download the [latest release](https://github.com/Felcon8/VersionedSaveAdd-on/releases)
 2. Open Blender and go to **Edit > Preferences > Add-ons**.
 3. Click **Install...** and select the downloaded script.
-4. Enable the checkbox for **System: Save New Version on Ctrl+S**.
+4. Enable the checkbox for **System: Versioned Save**.
 
 ## Requirements
 * Blender 3.0.0 or newer.
