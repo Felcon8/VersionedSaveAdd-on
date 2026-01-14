@@ -1,6 +1,6 @@
 # Versioned Save for Blender
 
-This add-on replaces the default `Ctrl + S` behavior with an incremental saving system.
+Versioned Save is a lightweight Blender add-on that replaces the standard "Overwrite" behavior of Ctrl + S with an incremental saving system. Instead of overwriting your current file, it creates a new version (e.g., _v001, _v002), ensuring you never lose previous iterations of your work
 
 ## How It Works
 When you press **Ctrl + S**:
