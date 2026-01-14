@@ -18,7 +18,11 @@ When you press **Ctrl + S**:
 ## Configuration
 You can customize the naming behavior in the Add-on preferences:
 * **Open Settings**: Click the **small arrow (triangle) ►** on the left side of the "Versioned Save" name in the Add-ons list to expand the preferences.
+<img width="1063" height="732" alt="Знімок екрана 2026-01-14 150336" src="https://github.com/user-attachments/assets/49683a33-ae24-4ccc-8f19-e2dbd7bd3ca2" />
+
 * **Type Setting**: Choose between **Number** (sequential) or **Timestamp** (date/time).
+
+* **Custom Hotkey**: Inside the expanded preferences, you can change the default **Ctrl + S** combo to any shortcut you prefer (e.g., Ctrl + Shift + S).
 
 ## Requirements
 * Blender 3.0.0 or newer.
