@@ -89,4 +89,72 @@ class VersionedSavePreferences(bpy.types.AddonPreferences):
                 if kmi.idname == "wm.ctrl_s_versioned_save":
                     # Отрисовываем строчку записи (нажал -> ввел комбо)
                     col = layout.column(align=True)
-                    col.context_pointer_set("keymap",
+                    col.context_pointer_set("keymap", km)
+                    col.prop(kmi, "type", text="", full_event=True) # full_event делает строчку интерактивной
+                    
+                    # Дополнительные настройки (Ctrl, Alt, Shift) под строчкой для проверки
+                    row = col.row(align=True)
+                    row.prop(kmi, "ctrl", text="Ctrl", toggle=True)
+                    row.prop(kmi, "shift", text="Shift", toggle=True)
+                    row.prop(kmi, "alt", text="Alt", toggle=True)
+                    found = True
+                    break
+            
+            if not found:
+                layout.label(text="Hotkey entry not found. Please reinstall the addon.", icon='ERROR')
+
+# ------------------------
+# Operator
+# ------------------------
+
+class WM_OT_ctrl_s_versioned_save(bpy.types.Operator):
+    bl_idname = "wm.ctrl_s_versioned_save"
+    bl_label = "Versioned Save"
+
+    def execute(self, context):
+        prefs = context.preferences.addons[__name__].preferences
+
+        if not prefs.enable_versioned_save:
+            bpy.ops.wm.save_mainfile()
+            return {'FINISHED'}
+
+        if not bpy.data.filepath:
+            self.report({'WARNING'}, "Save file once before versioning")
+            return {'CANCELLED'}
+
+        new_path = get_next_version(bpy.data.filepath, prefs.save_type)
+        bpy.ops.wm.save_as_mainfile(filepath=new_path, copy=False)
+        self.report({'INFO'}, f"Saved: {os.path.basename(new_path)}")
+        return {'FINISHED'}
+
+# ------------------------
+# Registration
+# ------------------------
+
+addon_keymaps = []
+
+def register():
+    bpy.utils.register_class(VersionedSavePreferences)
+    bpy.utils.register_class(WM_OT_ctrl_s_versioned_save)
+
+    wm = bpy.context.window_manager
+    # Регистрируем в секции 'Window', чтобы работало везде
+    kc = wm.keyconfigs.addon
+    if kc:
+        km = kc.keymaps.new(name='Window', space_type='EMPTY')
+        kmi = km.keymap_items.new(
+            WM_OT_ctrl_s_versioned_save.bl_idname,
+            type='S', value='PRESS', ctrl=True
+        )
+        addon_keymaps.append((km, kmi))
+
+def unregister():
+    for km, kmi in addon_keymaps:
+        km.keymap_items.remove(kmi)
+    addon_keymaps.clear()
+
+    bpy.utils.unregister_class(WM_OT_ctrl_s_versioned_save)
+    bpy.utils.unregister_class(VersionedSavePreferences)
+
+if __name__ == "__main__":
+    register()
