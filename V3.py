@@ -1,12 +1,11 @@
 bl_info = {
     "name": "Versioned Save",
     "author": "Felcon8",
-    "version": (1, 4, 2),
+    "version": (1, 4, 3),
     "blender": (3, 0, 0),
     "location": "Preferences > Keymap Customization",
-    "description": "Save new versions and force update Recent Files list.",
+    "description": "Advanced Versioning with forced Recent Files update.",
     "category": "System",
-    "doc_url": "https://github.com/Felcon8/VersionedSaveAdd-on",
 }
 
 import bpy
@@ -35,10 +34,7 @@ def get_next_version(filepath, save_type):
 class VersionedSavePreferences(bpy.types.AddonPreferences):
     bl_idname = __name__
 
-    enable_versioned_save: BoolProperty(
-        name="Use Versioned Save",
-        default=True
-    )
+    enable_versioned_save: BoolProperty(name="Use Versioned Save", default=True)
     save_type: EnumProperty(
         name="Mode",
         items=[('NUMBER', "Number", ""), ('TIMESTAMP', "Timestamp", "")],
@@ -47,25 +43,17 @@ class VersionedSavePreferences(bpy.types.AddonPreferences):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator("wm.url_open", text="GitHub Repository", icon='URL').url = "https://github.com/Felcon8/VersionedSaveAdd-on"
-        layout.separator()
+        layout.prop(self, "enable_versioned_save")
+        layout.prop(self, "save_type", expand=True)
         
-        box = layout.box()
-        box.prop(self, "enable_versioned_save")
-        row = box.row()
-        row.enabled = self.enable_versioned_save
-        row.prop(self, "save_type", expand=True)
-
-        layout.label(text="Hotkey (Click to change):")
         wm = context.window_manager
         kc = wm.keyconfigs.user
         km = kc.keymaps.get('Window')
         if km:
             for kmi in km.keymap_items:
                 if kmi.idname == "wm.ctrl_s_versioned_save":
-                    col = layout.column()
-                    col.context_pointer_set("keymap", km)
-                    col.prop(kmi, "type", text="", full_event=True)
+                    layout.label(text="Hotkey:")
+                    layout.prop(kmi, "type", text="", full_event=True)
                     break
 
 class WM_OT_ctrl_s_versioned_save(bpy.types.Operator):
@@ -83,21 +71,22 @@ class WM_OT_ctrl_s_versioned_save(bpy.types.Operator):
             self.report({'WARNING'}, "Save file once before versioning")
             return {'CANCELLED'}
             
-        new_path = get_next_version(bpy.data.filepath, prefs.save_type)
+        old_path = bpy.data.filepath
+        new_path = get_next_version(old_path, prefs.save_type)
         
-        # 1. Сохраняем файл
-        bpy.ops.wm.save_as_mainfile(filepath=new_path, copy=False)
+        # Сохраняем текущий файл под новым именем
+        bpy.ops.wm.save_as_mainfile(filepath=new_path, check_existing=False, copy=False)
         
-        # 2. Добавляем в Recent Files
-        try:
-            bpy.ops.wm.append_recent_files()
-        except:
-            pass
-
-        # 3. ПРИНУДИТЕЛЬНО сохраняем конфиг Блендера, чтобы список закрепился
+        # Принудительно прописываем путь в данные Блендера, если он не обновился
+        bpy.data.filepath = new_path 
+        
+        # Обновляем Recent Files через встроенную команду
+        bpy.ops.wm.append_recent_files()
+        
+        # Финальный штрих: сохраняем настройки, это триггерит обновление конфига последних файлов
         bpy.ops.wm.save_userpref()
             
-        self.report({'INFO'}, f"Saved: {os.path.basename(new_path)}")
+        self.report({'INFO'}, f"Version Saved: {os.path.basename(new_path)}")
         return {'FINISHED'}
 
 addon_keymaps = []
