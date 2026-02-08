@@ -1,10 +1,10 @@
 bl_info = {
     "name": "Versioned Save",
     "author": "Felcon8",
-    "version": (1, 4, 6),
+    "version": (1, 4, 7),
     "blender": (3, 0, 0),
     "location": "Preferences > Keymap Customization",
-    "description": "Saves a new version and correctly updates Recent Files.",
+    "description": "Saves a new version and forces Recent Files update.",
     "category": "System",
 }
 
@@ -22,6 +22,7 @@ def get_next_version(filepath, save_type):
         base_name = re.sub(r"(_v\d+|_ts\d{4}-\d{2}-\d{2}-\d{2}-\d{2})$", "", name)
         return os.path.join(directory, f"{base_name}_ts{timestamp}{ext}")
     else:
+        # Ищем номер версии в конце имени файла
         match = re.search(r"_v(\d+)$", name)
         if match:
             base = name[:match.start()]
@@ -33,7 +34,6 @@ def get_next_version(filepath, save_type):
 
 class VersionedSavePreferences(bpy.types.AddonPreferences):
     bl_idname = __name__
-
     enable_versioned_save: BoolProperty(name="Use Versioned Save", default=True)
     save_type: EnumProperty(
         name="Mode",
@@ -45,16 +45,6 @@ class VersionedSavePreferences(bpy.types.AddonPreferences):
         layout = self.layout
         layout.prop(self, "enable_versioned_save")
         layout.prop(self, "save_type", expand=True)
-        
-        wm = context.window_manager
-        kc = wm.keyconfigs.user
-        km = kc.keymaps.get('Window')
-        if km:
-            for kmi in km.keymap_items:
-                if kmi.idname == "wm.ctrl_s_versioned_save":
-                    layout.label(text="Hotkey (Ctrl+S by default):")
-                    layout.prop(kmi, "type", text="", full_event=True)
-                    break
 
 class WM_OT_ctrl_s_versioned_save(bpy.types.Operator):
     bl_idname = "wm.ctrl_s_versioned_save"
@@ -71,19 +61,22 @@ class WM_OT_ctrl_s_versioned_save(bpy.types.Operator):
             self.report({'WARNING'}, "First, save the file manually once!")
             return {'CANCELLED'}
             
+        # Генерируем новый путь
         new_path = get_next_version(bpy.data.filepath, prefs.save_type)
         
-        # Основное действие: Сохраняем как новый файл. 
-        # Это автоматически делает новый файл активным и обновляет Recent Files.
+        # ГЛАВНОЕ ИСПРАВЛЕНИЕ:
+        # Мы используем Save As, который сам переключает Blender на новый файл.
+        # check_existing=False убирает лишние вопросы от Windows.
+        # copy=False заставляет Blender переключить текущую сессию на этот файл.
         bpy.ops.wm.save_as_mainfile(filepath=new_path, check_existing=False, copy=False)
         
-        # Принудительно заставляем Blender запомнить этот путь в список последних
+        # Принудительно заставляем систему Recent Files обновиться
         try:
             bpy.ops.wm.append_recent_files()
         except:
             pass
             
-        self.report({'INFO'}, f"Saved new version: {os.path.basename(new_path)}")
+        self.report({'INFO'}, f"Saved: {os.path.basename(new_path)}")
         return {'FINISHED'}
 
 addon_keymaps = []
