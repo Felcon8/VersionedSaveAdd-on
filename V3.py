@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Versioned Save",
     "author": "Felcon8",
-    "version": (1, 4, 4),
+    "version": (1, 4, 5),
     "blender": (3, 0, 0),
     "location": "Preferences > Keymap Customization",
     "description": "Saves a new version and reloads it to refresh Recent Files.",
@@ -74,17 +74,16 @@ class WM_OT_ctrl_s_versioned_save(bpy.types.Operator):
         old_path = bpy.data.filepath
         new_path = get_next_version(old_path, prefs.save_type)
         
-        # 1. Сначала сохраняем текущий файл как новый, не переключаясь (copy=True)
+        # 1. Сохраняем текущий файл под новым именем (copy=True не меняет текущую сессию)
         bpy.ops.wm.save_as_mainfile(filepath=new_path, copy=True)
         
-        # 2. Теперь открываем этот только что созданный файл. 
-        # Это заставит Blender официально считать его "активным" и добавить в Recent.
+        # 2. Теперь открываем этот файл. Это добавит его в Recent Files и обновит заголовок
         bpy.ops.wm.open_mainfile(filepath=new_path)
         
-        # 3. Принудительно обновляем конфиг
+        # 3. Принудительно сохраняем настройки пользователя (помогает закрепить Recent Files)
         bpy.ops.wm.save_userpref()
             
-        self.report({'INFO'}, f"Active file is now: {os.path.basename(new_path)}")
+        self.report({'INFO'}, f"New active version: {os.path.basename(new_path)}")
         return {'FINISHED'}
 
 addon_keymaps = []
