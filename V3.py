@@ -1,10 +1,10 @@
 bl_info = {
     "name": "Versioned Save",
     "author": "Felcon8",
-    "version": (1, 4, 5),
+    "version": (1, 4, 6),
     "blender": (3, 0, 0),
     "location": "Preferences > Keymap Customization",
-    "description": "Saves a new version and reloads it to refresh Recent Files.",
+    "description": "Saves a new version and correctly updates Recent Files.",
     "category": "System",
 }
 
@@ -52,7 +52,7 @@ class VersionedSavePreferences(bpy.types.AddonPreferences):
         if km:
             for kmi in km.keymap_items:
                 if kmi.idname == "wm.ctrl_s_versioned_save":
-                    layout.label(text="Hotkey:")
+                    layout.label(text="Hotkey (Ctrl+S by default):")
                     layout.prop(kmi, "type", text="", full_event=True)
                     break
 
@@ -68,22 +68,22 @@ class WM_OT_ctrl_s_versioned_save(bpy.types.Operator):
             return {'FINISHED'}
             
         if not bpy.data.filepath:
-            self.report({'WARNING'}, "Save file once before versioning")
+            self.report({'WARNING'}, "First, save the file manually once!")
             return {'CANCELLED'}
             
-        old_path = bpy.data.filepath
-        new_path = get_next_version(old_path, prefs.save_type)
+        new_path = get_next_version(bpy.data.filepath, prefs.save_type)
         
-        # 1. Сохраняем текущий файл под новым именем (copy=True не меняет текущую сессию)
-        bpy.ops.wm.save_as_mainfile(filepath=new_path, copy=True)
+        # Основное действие: Сохраняем как новый файл. 
+        # Это автоматически делает новый файл активным и обновляет Recent Files.
+        bpy.ops.wm.save_as_mainfile(filepath=new_path, check_existing=False, copy=False)
         
-        # 2. Теперь открываем этот файл. Это добавит его в Recent Files и обновит заголовок
-        bpy.ops.wm.open_mainfile(filepath=new_path)
-        
-        # 3. Принудительно сохраняем настройки пользователя (помогает закрепить Recent Files)
-        bpy.ops.wm.save_userpref()
+        # Принудительно заставляем Blender запомнить этот путь в список последних
+        try:
+            bpy.ops.wm.append_recent_files()
+        except:
+            pass
             
-        self.report({'INFO'}, f"New active version: {os.path.basename(new_path)}")
+        self.report({'INFO'}, f"Saved new version: {os.path.basename(new_path)}")
         return {'FINISHED'}
 
 addon_keymaps = []
